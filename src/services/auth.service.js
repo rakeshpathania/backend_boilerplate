@@ -14,11 +14,14 @@ import {
   logger,
   UnauthorizedError,
 } from "../utils/error-handler.js";
+import OTPRepository from "../database/repository/otp.repositoty.js";
+import { sendEmail } from "./email.services.js";
 
 class UserService {
   constructor() {
     this.userRepository = new UserRepository();
     this.blackListTokenRepository = new BlackListTokenRepository();
+    this.otpRepository = new OTPRepository();
   }
 
   async signIn(userInputs) {
@@ -63,8 +66,8 @@ class UserService {
       }
 
       throw new APIError("Authentication failed", {
-        message: error.message,
-        stack: error.stack,
+        message: error?.details?.message,
+        stack: error?.details?.stack,
       });
     }
   }
@@ -98,8 +101,8 @@ class UserService {
         throw err;
       }
       throw new APIError("Unable to sign up the user", {
-        message: err.message,
-        stack: err.stack,
+        message: err?.details?.message,
+        stack: err?.details?.stack,
       });
     }
   }
@@ -111,8 +114,8 @@ class UserService {
       return FormateData(existingUser);
     } catch (err) {
       throw new APIError("Unable to find the user", {
-        message: err.message,
-        stack: err.stack,
+        message: err?.details?.message,
+        stack: err?.details?.stack,
       });
     }
   }
@@ -150,8 +153,8 @@ class UserService {
         throw err;
       }
       throw new APIError("Unable to update the user", {
-        message: err.message,
-        stack: err.stack,
+        message: err?.details?.message,
+        stack: err?.details?.stack,
       });
     }
   }
@@ -163,8 +166,8 @@ class UserService {
       return;
     } catch (err) {
       throw new APIError("Unable to delete the user", {
-        message: err.message,
-        stack: err.stack,
+        message: err?.details?.message,
+        stack: err?.details?.stack,
       });
     }
   }
@@ -175,8 +178,8 @@ class UserService {
       return;
     } catch (err) {
       throw new APIError("Unable to logout the user", {
-        message: err.message,
-        stack: err.stack,
+        message: err?.details?.message,
+        stack: err?.details?.stack,
       });
     }
   }
@@ -185,8 +188,48 @@ class UserService {
       return await this.blackListTokenRepository.getBlackListedToken(token);
     } catch (err) {
       throw new APIError("Unable to get the token", {
-        message: err.message,
-        stack: err.stack,
+        message: err?.details?.message,
+        stack: err?.details?.stack,
+      });
+    }
+  }
+
+  async generateOtp(email) {
+    try {
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const data = {
+        otp: otp.toString(),
+        email: email,
+      };
+      await sendEmail(email, "OTP Verification", otp);
+      await this.otpRepository.createOTP(data);
+      return;
+    } catch (err) {
+      throw new APIError("Unable to generate OTP", {
+        message: err?.details?.message,
+        stack: err?.details?.stack,
+      });
+    }
+  }
+
+  async verifyOtp(data) {
+    try {
+      const { otp, email } = data;
+      const existingOtp = await this.otpRepository.FindOTP(otp);
+      if (!existingOtp) {
+        throw new BadRequestError("Invalid OTP");
+      }
+      if (existingOtp.email !== email) {
+        throw new BadRequestError("Invalid OTP");
+      }
+      return FormateData(existingOtp);
+    } catch (err) {
+      if (err instanceof BadRequestError) {
+        throw err;
+      }
+      throw new APIError("Unable to verify OTP", {
+        message: err?.details?.message,
+        stack: err?.details?.stack,
       });
     }
   }

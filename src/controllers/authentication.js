@@ -1,87 +1,59 @@
 import UserService from "../services/auth.service.js";
-import { body } from "express-validator";
-import { validationResult } from "express-validator";
 import Authenticate from "../middlewares/auth.js";
-import { ValidationError, STATUS_CODES } from "../utils/error-handler.js";
+import { signinSchema, signupSchema } from "../validations/authentication.js";
+import { validateRequest } from "../middlewares/validate.js";
+import { STATUS_CODES } from "../utils/error-handler.js";
 export const AuthenticationController = (app) => {
   const service = new UserService();
 
-  const ValidateSignup = [
-    body("fullName.firstName")
-      .isLength({ min: 3 })
-      .withMessage("First name must be at least 3 characters long"),
-    body("email").isEmail().withMessage("Invalid email address"),
-    body("password")
-      .isLength({ min: 6 })
-      .withMessage("Password must be at least 6 characters long"),
-    body("phoneNumber")
-      .isLength({ min: 10 })
-      .withMessage("Phone number must be at least 10 characters long")
-      .isMobilePhone("any")
-      .withMessage("Phone number must be valid"),
-  ];
-
-  const ValidateSignin = [
-    body("email")
-      .notEmpty()
-      .withMessage("Email is required")
-      .isEmail()
-      .withMessage("Invalid email address"),
-    body("password").notEmpty().withMessage("Password is required"),
-  ];
-
   // Signup route
-  app.post("/user/signup", ValidateSignup, async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return next(
-          new ValidationError("Validation failed", { errors: errors.array() })
-        );
-      }
-      const { email, password, phoneNumber, fullName } = req.body;
-      const { data } = await service.signUp({
-        fullName: {
-          firstName: fullName?.firstName,
-          lastName: fullName?.lastName || "",
-        },
-        email,
-        password,
-        phoneNumber,
-      });
+  app.post(
+    "/user/signup",
+    validateRequest(signupSchema),
+    async (req, res, next) => {
+      try {
+        const { email, password, phoneNumber, fullName } = req.body;
+        const { data } = await service.signUp({
+          fullName: {
+            firstName: fullName?.firstName,
+            lastName: fullName?.lastName || "",
+          },
+          email,
+          password,
+          phoneNumber,
+        });
 
-      res
-        .status(STATUS_CODES.OK)
-        .json({ message: "User registered successfully", data });
-    } catch (err) {
-      next(err);
+        res
+          .status(STATUS_CODES.OK)
+          .json({ message: "User registered successfully", data });
+      } catch (err) {
+        next(err);
+      }
     }
-  });
+  );
 
   // Signin route
-  app.post("/user/login", ValidateSignin, async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        throw new ValidationError("Validation failed", {
-          errors: errors.array(),
-        });
-      }
-      const { email, password } = req.body;
-      const { data } = await service.signIn({ email, password });
-      const { password: _, salt: __, ...safeUserData } = data.user;
+  app.post(
+    "/user/login",
+    validateRequest(signinSchema),
+    async (req, res, next) => {
+      try {
+        const { email, password } = req.body;
+        const { data } = await service.signIn({ email, password });
+        const { password: _, salt: __, ...safeUserData } = data.user;
 
-      return res.status(200).json({
-        message: "User logged in successfully",
-        data: {
-          user: safeUserData,
-          token: data.token,
-        },
-      });
-    } catch (err) {
-      return next(err);
+        return res.status(200).json({
+          message: "User logged in successfully",
+          data: {
+            user: safeUserData,
+            token: data.token,
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
     }
-  });
+  );
 
   // getUser route
   app.get("/user/:id", Authenticate, async (req, res, next) => {
@@ -127,6 +99,32 @@ export const AuthenticationController = (app) => {
       return res
         .status(STATUS_CODES.OK)
         .json({ message: "User logout successfully" });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  //generate otp for forget password
+  app.post("/user/generate-otp", async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      await service.generateOtp(email);
+      return res
+        .status(STATUS_CODES.OK)
+        .json({ message: "OTP sent successfully" });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  //otp verification route
+  app.post("/user/verify-otp", async (req, res, next) => {
+    try {
+      const { email, otp } = req.body;
+      await service.verifyOtp({ email, otp });
+      return res
+        .status(STATUS_CODES.OK)
+        .json({ message: "OTP verified successfully" });
     } catch (err) {
       return next(err);
     }
