@@ -1,0 +1,28 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: individual123
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: backend-boilerplate
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    NODE_ENV: ${env:NODE_ENV}
+    MONGODB_URI: ${env:MONGODB_URI}
+    APP_SECRET: ${env:APP_SECRET}
+    SMTP_PORT: ${env:SMTP_PORT}
+    SMTP_USERNAME: ${env:SMTP_USERNAME}
+    EMAIL_FROM: ${env:EMAIL_FROM}
+    SMTP_PASSWORD: ${env:SMTP_PASSWORD}
+
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+  
+functions:
+  api:
+    handler: src/handler.server
+    events:
+      - httpApi: "*"

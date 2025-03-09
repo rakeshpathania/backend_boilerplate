@@ -4,10 +4,10 @@ import connectDB from "./database/connection.js";
 import expressApp from "./express-app.js";
 import { logger, initializeErrorHandling } from "./utils/error-handler.js";
 
+export const app = express();
+
 const StartServer = async () => {
   try {
-    const app = express();
-
     // Initialize error handling for process-level errors
     initializeErrorHandling();
 

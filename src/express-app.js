@@ -8,6 +8,13 @@ export default async (app) => {
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
   app.use(cors());
 
+  //testing route
+  app.get("/", (req, res, next) => {
+    return res.status(200).json({
+      message: "API is working",
+    });
+  });
+  
   //api
   AuthenticationController(app);
 
