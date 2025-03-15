@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { AuthenticationController } from "./controllers/authentication.js";
 import { handleError } from "./utils/error-handler.js";
+import { HandleMultimediaController } from "./controllers/handle-multimedia.js";
 
 export default async (app) => {
   app.use(express.json({ limit: "1mb" }));
@@ -14,9 +15,10 @@ export default async (app) => {
       message: "API is working",
     });
   });
-  
+
   //api
   AuthenticationController(app);
+  HandleMultimediaController(app);
 
   // error handling
   app.use(handleError);

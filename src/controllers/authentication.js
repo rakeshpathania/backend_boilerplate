@@ -2,7 +2,7 @@ import UserService from "../services/auth.service.js";
 import Authenticate from "../middlewares/auth.js";
 import { signinSchema, signupSchema } from "../validations/authentication.js";
 import { validateRequest } from "../middlewares/validate.js";
-import { STATUS_CODES } from "../utils/error-handler.js";
+import { STATUS_CODES, SUCCESS_STATUS } from "../utils/error-handler.js";
 export const AuthenticationController = (app) => {
   const service = new UserService();
 
@@ -25,7 +25,7 @@ export const AuthenticationController = (app) => {
 
         res
           .status(STATUS_CODES.OK)
-          .json({ message: "User registered successfully", data });
+          .json(SUCCESS_STATUS("User registred successfully", data));
       } catch (err) {
         next(err);
       }
@@ -41,14 +41,13 @@ export const AuthenticationController = (app) => {
         const { email, password } = req.body;
         const { data } = await service.signIn({ email, password });
         const { password: _, salt: __, ...safeUserData } = data.user;
-
-        return res.status(200).json({
-          message: "User logged in successfully",
-          data: {
-            user: safeUserData,
-            token: data.token,
-          },
-        });
+        const response = {
+          user: safeUserData,
+          token: data.token,
+        };
+        return res
+          .status(200)
+          .json(SUCCESS_STATUS("User login successfully", response));
       } catch (err) {
         return next(err);
       }
@@ -60,7 +59,9 @@ export const AuthenticationController = (app) => {
     try {
       const { id } = req.params;
       const { data } = await service.getProfile(id);
-      return res.status(STATUS_CODES.OK).json({ data });
+      return res
+        .status(STATUS_CODES.OK)
+        .json(SUCCESS_STATUS("User fetched successfully", data));
     } catch (err) {
       return next(err);
     }
@@ -71,7 +72,9 @@ export const AuthenticationController = (app) => {
     try {
       const { id } = req.params;
       const { data } = await service.updateProfile(id, req.body);
-      return res.status(STATUS_CODES.OK).json({ data });
+      return res
+        .status(STATUS_CODES.OK)
+        .json(SUCCESS_STATUS("User updated successfully", data));
     } catch (err) {
       return next(err);
     }
@@ -84,7 +87,7 @@ export const AuthenticationController = (app) => {
       await service.deleteProfile(id);
       return res
         .status(STATUS_CODES.OK)
-        .json({ message: "User deleted successfully" });
+        .json(SUCCESS_STATUS("User deleted successfully"));
     } catch (err) {
       return next(err);
     }
@@ -98,7 +101,7 @@ export const AuthenticationController = (app) => {
       await service.logout(token);
       return res
         .status(STATUS_CODES.OK)
-        .json({ message: "User logout successfully" });
+        .json(SUCCESS_STATUS("User logout successfully"));
     } catch (err) {
       return next(err);
     }
@@ -111,7 +114,7 @@ export const AuthenticationController = (app) => {
       await service.generateOtp(email);
       return res
         .status(STATUS_CODES.OK)
-        .json({ message: "OTP sent successfully" });
+        .json(SUCCESS_STATUS("Otp sent successfully"));
     } catch (err) {
       return next(err);
     }
@@ -124,7 +127,7 @@ export const AuthenticationController = (app) => {
       await service.verifyOtp({ email, otp });
       return res
         .status(STATUS_CODES.OK)
-        .json({ message: "OTP verified successfully" });
+        .json(SUCCESS_STATUS("Otp verified successfully"));
     } catch (err) {
       return next(err);
     }

@@ -15,13 +15,14 @@ import {
   UnauthorizedError,
 } from "../utils/error-handler.js";
 import OTPRepository from "../database/repository/otp.repositoty.js";
-import { sendEmail } from "./email.services.js";
+import EmailService from "./email.service.js";
 
 class UserService {
   constructor() {
     this.userRepository = new UserRepository();
     this.blackListTokenRepository = new BlackListTokenRepository();
     this.otpRepository = new OTPRepository();
+    this.emailService = new EmailService();
   }
 
   async signIn(userInputs) {
@@ -201,7 +202,7 @@ class UserService {
         otp: otp.toString(),
         email: email,
       };
-      await sendEmail(email, "OTP Verification", otp);
+      await this.emailService.sendEmail(email, "OTP Verification", otp);
       await this.otpRepository.createOTP(data);
       return;
     } catch (err) {

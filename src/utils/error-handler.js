@@ -13,6 +13,13 @@ export const STATUS_CODES = {
   NO_CONTENT: 204,
 };
 
+export const SUCCESS_STATUS = (message, data = {}) => {
+  return {
+    status: "success",
+    message,
+    data,
+  };
+};
 // Logger Configuration
 export const logger = createLogger({
   level: "info",
